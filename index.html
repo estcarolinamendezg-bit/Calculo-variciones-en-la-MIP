@@ -847,12 +847,22 @@
       return;
     }
 
-    // Buscar una columna de encabezado que diga "total" después de la matriz Z
+    // Buscar una columna de encabezado que diga exactamente "total" (producción
+    // bruta) después de la matriz Z. Se prioriza la coincidencia EXACTA porque
+    // columnas como "Total consumo intermedio" también contienen la palabra
+    // "total" y no son la columna de producción bruta que necesitamos.
     let totalColIdx = -1;
     for (let c = nSectores + 1; c < header.length; c++){
-      if (header[c] && /total/i.test(String(header[c]))){ totalColIdx = c; break; }
+      if (header[c] && /^total$/i.test(String(header[c]).trim())){ totalColIdx = c; break; }
     }
-    // Si no se encuentra por nombre, usar la última columna con datos
+    // Si no hay coincidencia exacta, aceptar cualquier encabezado que contenga
+    // "total" pero no sea un subtotal intermedio (p.ej. "consumo intermedio").
+    if (totalColIdx === -1){
+      for (let c = nSectores + 1; c < header.length; c++){
+        if (header[c] && /total/i.test(String(header[c])) && !/intermedio/i.test(String(header[c]))){ totalColIdx = c; break; }
+      }
+    }
+    // Si aún así no se encuentra, usar la última columna con datos
     if (totalColIdx === -1) totalColIdx = nColsDatos;
 
     const sectoresIn = dataRows.map(r => String(r[0]).trim());
